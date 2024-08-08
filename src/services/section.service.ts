@@ -1,5 +1,6 @@
 import { injectable } from "inversify";
-import { Section } from "../models";
+import { Content, Section } from "../models";
+import { PipelineStage } from "mongoose";
 
 @injectable()
 export class SectionService {
@@ -13,7 +14,49 @@ export class SectionService {
 
     async getSection() {
         try {
-            return await Section.find().sort({ sequence: 1 })
+            // return await Section.find().sort({ sequence: 1 })
+            const pipeline: PipelineStage[] = [
+                {
+                    $lookup: {
+                        from: "contents",
+                        localField: "_id",
+                        foreignField: "sectionId",
+                        as: "contentDetails",
+                        pipeline: [
+                            {
+                                $lookup: {
+                                    from: "items",
+                                    localField: "itemId",
+                                    foreignField: "_id",
+                                    as: "itemsDetails"
+                                }
+                            }
+                            ,
+                            {
+                                $unwind: {
+                                    path: "$itemsDetails"
+                                }
+                            }
+                        ]
+                    }
+                }, {
+                    $sort: {
+                        sequence: 1,
+                    }
+                },
+                {
+                    $addFields: {
+                        contentDetails: {
+                            $sortArray: {
+                                input: "$contentDetails",
+                                sortBy: { sequence: 1 }
+                            }
+                        }
+                    }
+                }
+            ]
+
+            return await Section.aggregate(pipeline)
         } catch (error) {
             throw (error)
         }
@@ -38,7 +81,7 @@ export class SectionService {
     async updateSectionSequence(id: string, sequence: number) {
         try {
             const totalDocuments = await Section.countDocuments();
-            if (sequence > totalDocuments) {
+            if (sequence > totalDocuments || sequence < 1) {
                 throw new Error('Invalid Sequence provided');
             }
 

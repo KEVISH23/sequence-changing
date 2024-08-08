@@ -81,7 +81,7 @@ export class ContentService {
             const lastSection = await Content.findOne({ sectionId }).sort({ sequence: -1 })
             const lastsequence = lastSection?.sequence
 
-            if (lastsequence && sequence > lastsequence) {
+            if ((lastsequence && sequence > lastsequence) || sequence<=0 ) {
                 throw new Error('Invalid Sequence provided');
             }
 

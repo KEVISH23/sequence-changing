@@ -55,7 +55,7 @@ export class SectionController {
             if (!isValidObjectId(id)) {
                 throw new Error('Id(s) provided are not valid')
             }
-            if(!sequence){
+            if(sequence==undefined || sequence==null){
                 throw new Error('Sequence not provided')
             }
             await this.sectionService.updateSectionSequence(id,sequence)

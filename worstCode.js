@@ -31,3 +31,106 @@ await Section.updateMany(conditionalObject, [
     },
   },
 ]);
+
+
+const pipeline= [
+  {
+    $lookup: {
+      from: "sections",
+      localField: "sectionId",
+      foreignField: "_id",
+      as: "sectionDetails"
+    }
+  },{
+    $unwind: {
+      path: "$sectionDetails",
+    }
+  },{
+    $lookup: {
+      from: "items",
+      localField: "itemId",
+      foreignField: "_id",
+      as: "itemsDetails"
+    }
+  },{
+    $unwind:{
+      path:"$itemsDetails"
+    }
+  },{
+    $group: {
+      _id: "$sectionId",
+      content:{$push:"$_id"},
+      items:{$push:"$itemsDetails"},
+      sectionDetails:{$first:"$sectionDetails"},
+      sectionSequence:{$first:"$sectionDetails.sequence"}
+    }
+  },
+  {
+    $sort: {
+      sectionSequence: 1
+    }
+  }
+]
+
+const pipeline1 = [
+  {
+    $lookup: {
+      from: "sections",
+      localField: "sectionId",
+      foreignField: "_id",
+      as: "sectionDetails"
+    }
+  },
+  {
+    $unwind: {
+      path: "$sectionDetails"
+    }
+  },
+  {
+    $lookup: {
+      from: "items",
+      localField: "itemId",
+      foreignField: "_id",
+      as: "itemsDetails"
+    }
+  },
+  {
+    $unwind: {
+      path: "$itemsDetails"
+    }
+  },
+  {
+    $group: {
+      _id: "$sectionId",
+      content: {
+        $push: {
+          _id: "$_id",
+          sequence: "$sequence",
+          itemsDetails: "$itemsDetails"
+        }
+      },
+      sectionDetails: {
+        $first: "$sectionDetails"
+      },
+      sectionSequence: {
+        $first: "$sectionDetails.sequence"
+      }
+    }
+  },
+  {
+    $sort: {
+      sectionSequence: 1
+    }
+  },
+  {
+    $addFields: {
+      content: {
+        $sortArray: {
+          input: "$content",
+          sortBy: { sequence: 1 }
+        }
+      }
+    }
+  }
+]
+return await Content.aggregate(pipeline)

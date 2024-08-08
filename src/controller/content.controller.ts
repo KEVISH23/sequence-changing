@@ -10,7 +10,7 @@ export class ContentController {
     constructor(
         @inject<ContentService>(TYPES.ContentService) private contentService: ContentService
     ) { }
-    @httpPost('/')
+    @httpPost('/addContent')
     async addContent(req: Request, res: Response) {
         try {
             const { sectionId, itemId, buttonText, buttonBgColor, buttonTextColor, isFree, freeBadgeColor, freeBadgeBgColor } = req.body
@@ -27,10 +27,11 @@ export class ContentController {
         }
     }
 
-    @httpGet('/')
+    @httpPost('/getContent')
     async getAllContent(req: Request, res: Response) {
         try {
             const { sectionId } = req.body
+            
             const data = await this.contentService.getAllContent(sectionId)
             res.json({ status: true, data, message: "Retrieved data" })
         } catch (error) {
@@ -59,10 +60,10 @@ export class ContentController {
             if (!isValidObjectId(id)) {
                 throw new Error('Id(s) provided are not valid')
             }
-            if(!sequence){
+            if (sequence==undefined || sequence==null) {
                 throw new Error('Sequence not provided')
             }
-            await this.contentService.updateContentSequence(id,sequence)
+            await this.contentService.updateContentSequence(id, sequence)
             res.json({ status: true, message: "Sequence Update" })
         } catch (error) {
             res.json({ status: false, message: error.message })
